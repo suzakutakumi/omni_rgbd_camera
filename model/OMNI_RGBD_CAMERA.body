@@ -1,0 +1,125 @@
+format: ChoreonoidBody
+formatVersion: 1.0
+angleUnit: degree
+name: OmniRGBDCamera
+
+links:
+  - 
+    name: CAMERA_BASE
+    translation: [0, 0, 0]
+    jointType: free
+    centerOfMass: [0, 0, 0]
+    mass: 0.001
+    inertia: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    elements:
+    -
+      type: Shape
+      geometry:
+        type: Box
+        size: [0.160, 0.160, 0.002]
+      appearance: &BodyAppearance
+        material:
+          diffuseColor: [0, 0.6, 0]
+          specularColor: [0.2, 0.8, 0.2]
+          shininess: 0.6
+    -
+      type: Shape
+      translation: [ 0.0, 0.0675, 0.0135 ]
+      geometry:
+        type: Box
+        size: [0.090, 0.025, 0.025]
+      appearance: &CamearaBodyFront
+        material:
+          diffuseColor: [0, 0, 0.6]
+          specularColor: [0.2, 0.8, 0.2]
+          shininess: 0.6
+    -
+      type: Camera
+      name: RangeCameraFront
+      translation: [ 0.0, 0.0675, 0.0135 ]
+      rotation:  [ [ 1, 0, 0, 90 ] ]
+      id: 4
+      format: COLOR_DEPTH
+      lensType: Normal
+      on: true
+      width: 1280
+      height: 720
+      fieldOfView: 58
+      nearClipDistance: 0.3
+      farClipDistance: 3
+      frameRate: 30
+
+    -
+      type: Shape
+      translation: [ 0.0, -0.0675, 0.0135 ]
+      geometry:
+        type: Box
+        size: [0.090, 0.025, 0.025]
+      appearance: &CamearaBody
+        material:
+          diffuseColor: [0.6, 0.0, 0.0]
+          specularColor: [0.2, 0.8, 0.2]
+          shininess: 0.6
+    -
+      type: Camera
+      name: RangeCameraBack
+      translation: [ 0.0, -0.0675, 0.0135 ]
+      rotation:  [ [ 0, 0, 1, 180 ], [ 1, 0, 0, 90 ] ]
+      id: 4
+      format: COLOR_DEPTH
+      lensType: Normal
+      on: true
+      width: 1280
+      height: 720
+      fieldOfView: 58
+      nearClipDistance: 0.3
+      farClipDistance: 3
+      frameRate: 30
+
+    -
+      type: Shape
+      translation: [ 0.0675, 0.0, 0.0135 ]
+      rotation:  [ [ 0, 0, 1, 90 ] ]
+      geometry:
+        type: Box
+        size: [0.090, 0.025, 0.025]
+      appearance: *CamearaBody
+    -
+      type: Camera
+      name: RangeCameraRight
+      translation: [ 0.0675, 0.0, 0.0135 ]
+      rotation:  [ [ 0, 0, 1, -90 ], [ 1, 0, 0, 90 ] ]
+      id: 4
+      format: COLOR_DEPTH
+      lensType: Normal
+      on: true
+      width: 1280
+      height: 720
+      fieldOfView: 58
+      nearClipDistance: 0.3
+      farClipDistance: 3
+      frameRate: 30
+
+    -
+      type: Shape
+      translation: [ -0.0675, 0.0, 0.0135 ]
+      rotation:  [ [ 0, 0, 1, 90 ] ]
+      geometry:
+        type: Box
+        size: [0.090, 0.025, 0.025]
+      appearance: *CamearaBody
+    -
+      type: Camera
+      name: RangeCameraLeft
+      translation: [ -0.0675, 0.0, 0.0135 ]
+      rotation:  [ [ 0, 0, 1, 90 ], [ 1, 0, 0, 90 ] ]
+      id: 4
+      format: COLOR_DEPTH
+      lensType: Normal
+      on: true
+      width: 1280
+      height: 720
+      fieldOfView: 58
+      nearClipDistance: 0.3
+      farClipDistance: 3
+      frameRate: 30
