@@ -12,28 +12,13 @@
 
 #include <pcl_conversions/pcl_conversions.h>
 
-#include <chrono>
 #include <iostream>
-#include <sstream>
 #include <omp.h>
 
 #include "PointCloud.hpp"
 
 using namespace cnoid;
 using namespace std;
-
-std::string getTimestamp()
-{
-    // 現在のUnixタイム（エポック秒）を取得
-    const auto &now = std::chrono::system_clock::now();
-    const auto &currentTime = std::chrono::system_clock::to_time_t(now);
-
-    // Unixタイムを文字列に変換
-    std::stringstream ss;
-    ss << currentTime;
-
-    return ss.str();
-}
 
 class OmniRGBDCameraController : public SimpleController
 {
@@ -53,6 +38,7 @@ class OmniRGBDCameraController : public SimpleController
 public:
     virtual bool configure(SimpleControllerConfig *config) override
     {
+        cout << "start configure" << endl;
         node = rclcpp::Node::make_shared("omni_rgbd_camera_node");
         sensor_publisher = node->create_publisher<sensor_msgs::msg::PointCloud2>("/scan", 10);
 
@@ -92,13 +78,13 @@ public:
     cnoid::Isometry3 pos;
     virtual bool start() override
     {
-        pos = io->body()->rootLink()->position();
         cout << "start" << endl;
+        pos = root->position();
         return true;
     }
     virtual bool control() override
     {
-        static int cnt = 1;
+        // cout << "control" << endl;
         joystick.readCurrentState();
 
         static bool PrevMoveButtonState[4] = {false, false, false, false};
@@ -112,8 +98,6 @@ public:
             bool Button = joystick.getButtonState(ButtonState[i]);
             if (Button && !PrevMoveButtonState[i])
             {
-                // auto item = (BodyItem *)config->bodyItem();
-
                 switch (i)
                 {
                 case 0:
@@ -132,9 +116,6 @@ public:
                     break;
                 }
 
-                cout << "move " << endl
-                     << pos.translation() << endl;
-
                 root->setTranslation(pos.translation());
                 // cout<<"New Position: "<<pos.translation().transpose()<<endl;
 
@@ -146,27 +127,36 @@ public:
         bool buttonState = joystick.getPosition(2) != 0.0;
         if (buttonState && !PrevButtonState)
         {
-            cout << "push L_BUTTON" << endl;
-            getPointCloud(to_string(cnt));
-            cnt++;
+            static auto clock = rclcpp::Clock(RCL_SYSTEM_TIME);
+            const auto &timestamp = clock.now();
+
+            cout << "merge pointcloud" << endl;
+            auto merged = getPointCloud();
+
+            cout << "publish pointcloud" << endl;
+            sensor_msgs::msg::PointCloud2 pcl_msg;
+            pcl::toROSMsg(*merged.get_cloud(), pcl_msg);
+            pcl_msg.header.set__stamp(timestamp);
+            sensor_publisher->publish(pcl_msg);
         }
         PrevButtonState = buttonState;
         return true;
     }
-    void getPointCloud(const string &filename_end = "")
+
+    PointCloud getPointCloud()
     {
         std::string name_directions[4] = {"front", "right", "left", "back"};
         pcl::PointCloud<pcl::PointXYZRGB> clouds[4];
 
         //  現在のシーンの画像取得
-        #pragma omp parallel for
+#pragma omp parallel for
         for (auto direction = 0; direction < 4; direction++)
         {
             auto camera = omniRangeCamera[direction];
 
             const Image &RangeImage = camera->constImage();
             //  現在のシーンの画像保存
-            RangeImage.save("pointcloud" + name_directions[direction]);
+            // RangeImage.save("pointcloud" + name_directions[direction]);
 
             //  画像の高さと横幅
             const int width = RangeImage.width();
@@ -200,7 +190,7 @@ public:
         }
 
         PointCloud pcs[4];
-        #pragma omp parallel for
+#pragma omp parallel for
         for (auto direction = 0; direction < 4; direction++)
         {
             pcs[direction] = PointCloud(clouds[direction]);
@@ -214,10 +204,10 @@ public:
             Back,
         };
 
-        #pragma omp parallel for
+#pragma omp parallel for
         for (int i = 0; i < 4; i++)
         {
-            pcs[i].z_range_filter(-2.0, 2.0);
+            // pcs[i].z_range_filter(-3.0, 3.0);
 
             switch (i)
             {
@@ -249,10 +239,6 @@ public:
                     p.x -= 0.080; });
                 break;
             }
-
-            // auto filename = "pointcloud_" + name_directions[i];
-            // pcs[i].save_to_pcd(filename);
-            // cout << "save " + filename << endl;
         }
 
         PointCloud merged;
@@ -261,11 +247,7 @@ public:
             merged.extended(p);
         }
 
-        cout << "publish pointcloud" << endl;
-
-        sensor_msgs::msg::PointCloud2 pcl_msg;
-        pcl::toROSMsg(*merged.get_cloud(), pcl_msg);
-        sensor_publisher->publish(pcl_msg);
+        return merged;
     }
 };
 

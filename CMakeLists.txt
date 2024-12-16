@@ -6,10 +6,10 @@ if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
 endif()
 
-# Default to C++14
+# Default to C++17
 set(CMAKE_CXX_STANDARD ${CHOREONOID_CXX_STANDARD})
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -32,6 +32,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 # find_package(PCL REQUIRED COMPONENTS common io)
 find_package(PCL 1.13 REQUIRED)
+# find_package(Eigen REQUIRED)
 
 find_package(Boost REQUIRED)
 find_package(choreonoid REQUIRED)
