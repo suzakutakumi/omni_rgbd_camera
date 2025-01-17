@@ -36,7 +36,7 @@ links:
     -
       type: Camera
       name: RangeCameraFront
-      translation: [ 0.0, 0.0675, 0.0135 ]
+      translation: [ 0.0, 0.08, 0.0135 ]
       rotation:  [ [ 1, 0, 0, 90 ] ]
       id: 4
       format: COLOR_DEPTH
@@ -47,6 +47,9 @@ links:
       fieldOfView: 58
       nearClipDistance: 0.3
       farClipDistance: 3
+      # fieldOfView: 90
+      # nearClipDistance: 0.01
+      # farClipDistance: 30
       frameRate: 30
 
     -
@@ -63,7 +66,7 @@ links:
     -
       type: Camera
       name: RangeCameraBack
-      translation: [ 0.0, -0.0675, 0.0135 ]
+      translation: [ 0.0, -0.08, 0.0135 ]
       rotation:  [ [ 0, 0, 1, 180 ], [ 1, 0, 0, 90 ] ]
       id: 4
       format: COLOR_DEPTH
@@ -74,6 +77,9 @@ links:
       fieldOfView: 58
       nearClipDistance: 0.3
       farClipDistance: 3
+      # fieldOfView: 90
+      # nearClipDistance: 0.01
+      # farClipDistance: 30
       frameRate: 30
 
     -
@@ -87,7 +93,7 @@ links:
     -
       type: Camera
       name: RangeCameraRight
-      translation: [ 0.0675, 0.0, 0.0135 ]
+      translation: [ 0.08, 0.0, 0.0135 ]
       rotation:  [ [ 0, 0, 1, -90 ], [ 1, 0, 0, 90 ] ]
       id: 4
       format: COLOR_DEPTH
@@ -98,6 +104,9 @@ links:
       fieldOfView: 58
       nearClipDistance: 0.3
       farClipDistance: 3
+      # fieldOfView: 90
+      # nearClipDistance: 0.01
+      # farClipDistance: 30
       frameRate: 30
 
     -
@@ -111,7 +120,7 @@ links:
     -
       type: Camera
       name: RangeCameraLeft
-      translation: [ -0.0675, 0.0, 0.0135 ]
+      translation: [ -0.08, 0.0, 0.0135 ]
       rotation:  [ [ 0, 0, 1, 90 ], [ 1, 0, 0, 90 ] ]
       id: 4
       format: COLOR_DEPTH
@@ -122,4 +131,7 @@ links:
       fieldOfView: 58
       nearClipDistance: 0.3
       farClipDistance: 3
+      # fieldOfView: 90
+      # nearClipDistance: 0.01
+      # farClipDistance: 30
       frameRate: 30

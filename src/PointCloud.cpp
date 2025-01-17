@@ -45,7 +45,7 @@ void PointCloud::z_range_filter(int limit_min, int limit_max)
     Cloud_Filter.filter(*cloud);
 }
 
-void PointCloud::filter(void (*filter_func)(pcl::PointXYZRGB &))
+void PointCloud::filter(std::function<void(pcl::PointXYZRGB &)> filter_func)
 {
     for (auto &p : cloud->points)
     {
@@ -53,8 +53,7 @@ void PointCloud::filter(void (*filter_func)(pcl::PointXYZRGB &))
     }
 }
 
-void PointCloud::filter(
-    pcl::PointXYZRGB &(*filter_func)(const pcl::PointXYZRGB &))
+void PointCloud::filter(std::function<pcl::PointXYZRGB &(const pcl::PointXYZRGB &)> filter_func)
 {
     for (auto &p : cloud->points)
     {

@@ -35,6 +35,8 @@ class OmniRGBDCameraController : public SimpleController
     rclcpp::Node::SharedPtr node;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr sensor_publisher;
 
+    double init_pos[3];
+
 public:
     virtual bool configure(SimpleControllerConfig *config) override
     {
@@ -80,6 +82,9 @@ public:
     {
         cout << "start" << endl;
         pos = root->position();
+        init_pos[0] = pos.translation().x();
+        init_pos[1] = pos.translation().y();
+        init_pos[2] = pos.translation().z();
         return true;
     }
     virtual bool control() override
@@ -131,6 +136,7 @@ public:
             const auto &timestamp = clock.now();
 
             cout << "merge pointcloud" << endl;
+            // auto merged = getPointCloud(pos.translation().x() - init_pos[0], pos.translation().y() - init_pos[1], pos.translation().z() - init_pos[2]);
             auto merged = getPointCloud();
 
             cout << "publish pointcloud" << endl;
@@ -143,7 +149,7 @@ public:
         return true;
     }
 
-    PointCloud getPointCloud()
+    PointCloud getPointCloud(double mx = 0, double my = 0, double mz = 0)
     {
         std::string name_directions[4] = {"front", "right", "left", "back"};
         pcl::PointCloud<pcl::PointXYZRGB> clouds[4];
@@ -246,6 +252,12 @@ public:
         {
             merged.extended(p);
         }
+
+        merged.filter([=](pcl::PointXYZRGB &p)
+                      {
+            p.x += mx;
+            p.y += mz;
+            p.z += -my; });
 
         return merged;
     }

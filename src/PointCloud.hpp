@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pcl/common/common_headers.h>
+#include <functional>
 
 class PointCloud
 {
@@ -11,9 +12,9 @@ public:
     PointCloud(pc);
     void save_to_pcd(const std::string &) const;
     pc_ptr get_cloud() const { return cloud; }
-    void z_range_filter(int,int);
-    void filter(void (*func)(pcl::PointXYZRGB &));
-    void filter(pcl::PointXYZRGB &(*func)(const pcl::PointXYZRGB &));
+    void z_range_filter(int, int);
+    void filter(std::function<void(pcl::PointXYZRGB &)>);
+    void filter(std::function<pcl::PointXYZRGB &(const pcl::PointXYZRGB &)>);
     PointCloud extended(const PointCloud &);
 
 private:
