@@ -11,6 +11,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/voxel_grid.h>
 
 #include <iostream>
 #include <omp.h>
@@ -85,6 +86,7 @@ public:
         init_pos[0] = pos.translation().x();
         init_pos[1] = pos.translation().y();
         init_pos[2] = pos.translation().z();
+        cout << "start2" << endl;
         return true;
     }
     virtual bool control() override
@@ -130,8 +132,11 @@ public:
         }
 
         bool buttonState = joystick.getPosition(2) != 0.0;
-        if (buttonState && !PrevButtonState)
+        static int timer = 0;
+        timer++;
+        if (timer >= 60 * 60)
         {
+            timer = 0;
             static auto clock = rclcpp::Clock(RCL_SYSTEM_TIME);
             const auto &timestamp = clock.now();
 
@@ -139,10 +144,19 @@ public:
             // auto merged = getPointCloud(pos.translation().x() - init_pos[0], pos.translation().y() - init_pos[1], pos.translation().z() - init_pos[2]);
             auto merged = getPointCloud();
 
+            pcl::PointCloud<pcl::PointXYZRGB> merged_pc = *merged.get_cloud();
+            merged_pc.is_dense = false;
+            pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+            sor.setInputCloud(merged_pc.makeShared());
+            sor.setLeafSize(0.05, 0.05, 0.05);
+            sor.filter(merged_pc);
+
             cout << "publish pointcloud" << endl;
             sensor_msgs::msg::PointCloud2 pcl_msg;
-            pcl::toROSMsg(*merged.get_cloud(), pcl_msg);
+            pcl::toROSMsg(merged_pc, pcl_msg);
             pcl_msg.header.set__stamp(timestamp);
+            pcl_msg.header.set__frame_id("nemui");
+            pcl_msg.is_dense = false;
             sensor_publisher->publish(pcl_msg);
         }
         PrevButtonState = buttonState;
@@ -181,6 +195,7 @@ public:
             std::size_t i = 0;
 
             //  Point Cloudに各点の値（座標、色）を格納
+            #pragma omp parallel for
             for (const auto &e : camera->constPoints())
             {
                 // X,Y,Zを格納
