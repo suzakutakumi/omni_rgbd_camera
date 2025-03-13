@@ -22,9 +22,9 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-find_package(OpenMP)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+# find_package(OpenMP)
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -34,22 +34,24 @@ find_package(pcl_conversions REQUIRED)
 find_package(PCL 1.13 REQUIRED)
 # find_package(Eigen REQUIRED)
 
-find_package(Boost REQUIRED)
+# find_package(Boost REQUIRED)
 find_package(choreonoid REQUIRED)
 
 include_directories(
   include
 )
 include_directories(${PCL_INCLUDE_DIRS} ${CHOREONOID_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
+link_directories(${PCL_LIBRARY_DIRS} ${CHOREONOID_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 # include_directories(${CHOREONOID_INCLUDE_DIRS})
-link_directories(${CHOREONOID_LIBRARY_DIRS})
 
 add_subdirectory(src)
 
-choreonoid_add_simple_controller(OmniRGBDCameraNode src/omni_rgbd_camera_node.cpp src/PointCloud.cpp)
+choreonoid_add_simple_controller(MoveNode src/move_node.cpp)
+ament_target_dependencies(MoveNode)
+
+choreonoid_add_simple_controller(OmniRGBDCameraNode src/omni_rgbd_camera_node.cpp)
 ament_target_dependencies(OmniRGBDCameraNode
     rclcpp
     sensor_msgs

@@ -1,22 +1,20 @@
-#include <cnoid/BodyItem>
-#include <cnoid/Camera>
-#include <cnoid/Item>
-#include <cnoid/ItemList>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/common/transforms.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+
 #include <cnoid/Joystick>
 #include <cnoid/RangeCamera>
-#include <cnoid/RootItem>
 #include <cnoid/SimpleController>
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/filters/voxel_grid.h>
-
 #include <iostream>
-#include <omp.h>
+// #include <omp.h>
 
-#include "PointCloud.hpp"
+// #include "PointCloud.hpp"
 
 using namespace cnoid;
 using namespace std;
@@ -29,14 +27,14 @@ class OmniRGBDCameraController : public SimpleController
     Joystick joystick;
     bool PrevButtonState;
 
-    Link *root;
+    // Link *root = nullptr;
 
     SimpleControllerConfig *config;
 
     rclcpp::Node::SharedPtr node;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr sensor_publisher;
 
-    double init_pos[3];
+    // double init_pos[3];
 
 public:
     virtual bool configure(SimpleControllerConfig *config) override
@@ -70,23 +68,37 @@ public:
             io->enableInput(camera);
         }
 
-        root = io->body()->rootLink();
-        root->setActuationMode(Link::LinkPosition);
-        io->enableInput(root);
-        io->enableOutput(root);
+        // root = io->body()->rootLink();
+        // if (!root)
+        // {
+        //     cout << "failed" << endl;
+        //     return false;
+        // }
+        // root->setActuationMode(Link::LinkPosition);
+        // io->enableInput(root);
+        // io->enableOutput(root);
+
+        // cout << "ggggaaa" << endl;
+
+        // pos = root->position().translation().eval().cast<double>();
+        // cout << "hgfghgf" << endl;
+
+        // cout << root->name() << endl;
+        // cout << pos.x() << endl;
+        // // pos = cnoid::Translation3(Eigen::Vector3d(root->translation()));
+        // init_pos[1] = 1.0;
+        // init_pos[2] = 1.0;
+        // cout << "end" << endl;
 
         return true;
     }
 
-    cnoid::Isometry3 pos;
+    // cnoid::Affine3 rotation;
+    // cnoid::Vector3d pos;
+    // std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> positions;
     virtual bool start() override
     {
         cout << "start" << endl;
-        pos = root->position();
-        init_pos[0] = pos.translation().x();
-        init_pos[1] = pos.translation().y();
-        init_pos[2] = pos.translation().z();
-        cout << "start2" << endl;
         return true;
     }
     virtual bool control() override
@@ -94,89 +106,122 @@ public:
         // cout << "control" << endl;
         joystick.readCurrentState();
 
-        static bool PrevMoveButtonState[4] = {false, false, false, false};
-        const cnoid::Joystick::ButtonID ButtonState[4] = {cnoid::Joystick::Y_BUTTON,
-                                                          cnoid::Joystick::B_BUTTON,
-                                                          cnoid::Joystick::X_BUTTON,
-                                                          cnoid::Joystick::A_BUTTON};
+        // static bool PrevMoveButtonState[4] = {false, false, false, false};
+        // const cnoid::Joystick::ButtonID ButtonState[4] = {cnoid::Joystick::Y_BUTTON,
+        //                                                   cnoid::Joystick::B_BUTTON,
+        //                                                   cnoid::Joystick::X_BUTTON,
+        //                                                   cnoid::Joystick::A_BUTTON};
 
-        for (int i = 0; i < 4; i++)
-        {
-            bool Button = joystick.getButtonState(ButtonState[i]);
-            if (Button && !PrevMoveButtonState[i])
-            {
-                switch (i)
-                {
-                case 0:
-                    pos.translation().x() += 0.1;
-                    break;
-                case 1:
-                    pos.translation().y() -= 0.1;
-                    break;
-                case 2:
-                    pos.translation().y() += 0.1;
-                    break;
-                case 3:
-                    pos.translation().x() -= 0.1;
-                    break;
-                default:
-                    break;
-                }
+        // for (int i = 0; i < 4; i++)
+        // {
+        //     bool Button = joystick.getButtonState(ButtonState[i]);
+        //     if (Button && !PrevMoveButtonState[i])
+        //     {
+        //         switch (i)
+        //         {
+        //         case 0:
+        //             pos.x() += 0.1;
+        //             break;
+        //         case 1:
+        //             pos.y() -= 0.1;
+        //             break;
+        //         case 2:
+        //             pos.y() += 0.1;
+        //             break;
+        //         case 3:
+        //             pos.x() -= 0.1;
+        //             break;
+        //         default:
+        //             break;
+        //         }
 
-                root->setTranslation(pos.translation());
-                // cout<<"New Position: "<<pos.translation().transpose()<<endl;
+        //         root->setTranslation(pos);
+        //         // cout<<"New Position: "<<pos.translation().transpose()<<endl;
 
-                // item->getLocationProxy()->setGlobalLocation(pos);
-            }
-            PrevMoveButtonState[i] = Button;
-        }
+        //         // item->getLocationProxy()->setGlobalLocation(pos);
+        //     }
+        //     PrevMoveButtonState[i] = Button;
+        // }
 
         bool buttonState = joystick.getPosition(2) != 0.0;
-        static int timer = 0;
-        timer++;
-        if (timer >= 60 * 60)
+        static auto timer = clock.now();
+        if (stop_flg and (clock.now() - timer).seconds() > 2.0)
         {
-            timer = 0;
-            static auto clock = rclcpp::Clock(RCL_SYSTEM_TIME);
-            const auto &timestamp = clock.now();
-
-            cout << "merge pointcloud" << endl;
-            // auto merged = getPointCloud(pos.translation().x() - init_pos[0], pos.translation().y() - init_pos[1], pos.translation().z() - init_pos[2]);
-            auto merged = getPointCloud();
-
-            pcl::PointCloud<pcl::PointXYZRGB> merged_pc = *merged.get_cloud();
-            merged_pc.is_dense = false;
-            pcl::VoxelGrid<pcl::PointXYZRGB> sor;
-            sor.setInputCloud(merged_pc.makeShared());
-            sor.setLeafSize(0.05, 0.05, 0.05);
-            sor.filter(merged_pc);
-
-            cout << "publish pointcloud" << endl;
-            sensor_msgs::msg::PointCloud2 pcl_msg;
-            pcl::toROSMsg(merged_pc, pcl_msg);
-            pcl_msg.header.set__stamp(timestamp);
-            pcl_msg.header.set__frame_id("nemui");
-            pcl_msg.is_dense = false;
-            sensor_publisher->publish(pcl_msg);
+            cout << "aaa" << endl;
+            // timer = 0;
+            if (th.joinable())
+            {
+                th.join();
+            }
+            else
+            {
+                stop_flg = false;
+                timer = clock.now();
+                cout << "b" << endl;
+                th = std::thread(std::bind(&OmniRGBDCameraController::publishPointCloud, this));
+                cout << "c" << endl;
+            }
         }
         PrevButtonState = buttonState;
         return true;
     }
 
-    PointCloud getPointCloud(double mx = 0, double my = 0, double mz = 0)
+    virtual void stop() override
+    {
+        th.join();
+    }
+
+    std::thread th = std::thread([]() {});
+    bool stop_flg = true;
+    rclcpp::Clock clock = rclcpp::Clock(RCL_SYSTEM_TIME);
+    void publishPointCloud()
+    {
+        const auto &timestamp = clock.now();
+
+        cout << "merge pointcloud" << endl;
+        // auto merged = getPointCloud(pos.translation().x() - init_pos[0], pos.translation().y() - init_pos[1], pos.translation().z() - init_pos[2]);
+        auto merged_pc = getPointCloud();
+        pcl::PointCloud<pcl::PointXYZRGB> filterd_pc;
+
+        cout << "voxel filter" << endl;
+
+        merged_pc->is_dense = false;
+        pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+        sor.setInputCloud(merged_pc);
+        sor.setLeafSize(0.05, 0.05, 0.05);
+        sor.filter(filterd_pc);
+
+        cout << "publish pointcloud" << endl;
+        sensor_msgs::msg::PointCloud2::UniquePtr pcl_msg(new sensor_msgs::msg::PointCloud2());
+        pcl::toROSMsg(filterd_pc, *pcl_msg);
+        pcl_msg->header.set__stamp(timestamp);
+        pcl_msg->header.set__frame_id("nemui");
+        pcl_msg->is_dense = merged_pc->is_dense;
+        sensor_publisher->publish(std::move(pcl_msg));
+
+        stop_flg = true;
+    }
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPointCloud(double mx = 0, double my = 0, double mz = 0)
     {
         std::string name_directions[4] = {"front", "right", "left", "back"};
         pcl::PointCloud<pcl::PointXYZRGB> clouds[4];
 
+        enum Direction
+        {
+            Front,
+            Right,
+            Left,
+            Back,
+        };
+
         //  現在のシーンの画像取得
-#pragma omp parallel for
+        // #pragma omp parallel for
         for (auto direction = 0; direction < 4; direction++)
         {
             auto camera = omniRangeCamera[direction];
 
             const Image &RangeImage = camera->constImage();
-            //  現在のシーンの画像保存
-            // RangeImage.save("pointcloud" + name_directions[direction]);
 
             //  画像の高さと横幅
             const int width = RangeImage.width();
@@ -184,7 +229,7 @@ public:
             //  色データを取得
             const unsigned char *pixels = RangeImage.pixels();
 
-            // Point Cloudの変数宣言
+            // // Point Cloudの変数宣言
             pcl::PointCloud<pcl::PointXYZRGB> &cloud = clouds[direction];
             // Point Cloudの初期化
             cloud.width = width;
@@ -195,7 +240,7 @@ public:
             std::size_t i = 0;
 
             //  Point Cloudに各点の値（座標、色）を格納
-            #pragma omp parallel for
+            // #pragma omp parallel for
             for (const auto &e : camera->constPoints())
             {
                 // X,Y,Zを格納
@@ -208,73 +253,44 @@ public:
                 cloud[i].b = pixels[3 * i + 2];
                 ++i;
             }
-        }
 
-        PointCloud pcs[4];
-#pragma omp parallel for
-        for (auto direction = 0; direction < 4; direction++)
-        {
-            pcs[direction] = PointCloud(clouds[direction]);
-        }
-
-        enum Direction
-        {
-            Front,
-            Right,
-            Left,
-            Back,
-        };
-
-#pragma omp parallel for
-        for (int i = 0; i < 4; i++)
-        {
-            // pcs[i].z_range_filter(-3.0, 3.0);
-
-            switch (i)
+            double theta = 0;
+            switch (direction)
             {
             case Direction::Front:
-                pcs[i].filter([](pcl::PointXYZRGB &p)
-                              { p.z -= 0.080; });
+                theta = 0;
                 break;
             case Direction::Back:
-                pcs[i].filter([](pcl::PointXYZRGB &p)
-                              {
-                    p.x = -p.x;
-                    p.z = -p.z;
-                    p.z += 0.080; });
+                theta = M_PI;
                 break;
             case Direction::Right:
-                pcs[i].filter([](pcl::PointXYZRGB &p)
-                              {
-                    float x = p.x;
-                    p.x = -p.z;
-                    p.z = x;
-                    p.x += 0.080; });
+                theta = 3 * M_PI / 2;
                 break;
             case Direction::Left:
-                pcs[i].filter([](pcl::PointXYZRGB &p)
-                              {
-                    float x = p.x;
-                    p.x = p.z;
-                    p.z = -x;
-                    p.x -= 0.080; });
+                theta = M_PI / 2;
                 break;
             }
+            Eigen::Affine3f move_transform = Eigen::Affine3f::Identity();
+            move_transform.translation() << 0.0, 0.0, -0.080;
+
+            Eigen::Affine3f rotate_transform = Eigen::Affine3f::Identity();
+            rotate_transform.rotate(Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitY()));
+
+            pcl::transformPointCloud(cloud, cloud, rotate_transform * move_transform);
         }
 
-        PointCloud merged;
-        for (auto &p : pcs)
+        pcl::PointCloud<pcl::PointXYZRGB> merged;
+        for (auto &cloud : clouds)
         {
-            merged.extended(p);
+            merged += cloud;
         }
 
-        merged.filter([=](pcl::PointXYZRGB &p)
-                      {
-            p.x += mx;
-            p.y += mz;
-            p.z += -my; });
+        Eigen::Affine3f transform = Eigen::Affine3f::Identity();
+        transform.translation() << mx, my, mz;
 
-        return merged;
+        pcl::transformPointCloud(merged, merged, transform);
+
+        return merged.makeShared();
     }
 };
 
